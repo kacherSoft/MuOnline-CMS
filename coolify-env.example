@@ -1,0 +1,58 @@
+# ============================================================
+# MuCMS - Coolify Environment Variables Reference
+# ============================================================
+#
+# Copy these variables to your Coolify service configuration.
+# This file is for reference only - do NOT commit actual secrets!
+#
+# In Coolify: Go to your service → Environment Variables → Add these
+#
+# ============================================================
+
+# ============================================================
+# APPLICATION SETTINGS
+# ============================================================
+NODE_ENV=production
+APP_PORT=3000
+
+# JWT Secret - Generate a secure random string (min 32 chars)
+# Generate with: openssl rand -hex 32
+JWT_SECRET=CHANGE-THIS-TO-A-SECURE-RANDOM-STRING
+JWT_EXPIRES_IN=15m
+REFRESH_TOKEN_EXPIRES_IN=7d
+
+# CORS Origin - Your Coolify domain
+CORS_ORIGIN=https://your-domain.coolify.com
+
+# ============================================================
+# CLIENT BUILD-TIME VARIABLES (Vite)
+# ============================================================
+# These are baked into the client bundle at build time
+# Use relative paths when backend serves frontend
+VITE_API_URL=/api
+VITE_SOCKET_URL=/
+
+# ============================================================
+# DATABASE (External MySQL)
+# ============================================================
+# Your external MySQL connection details
+DB_HOST=your-mysql-host-or-ip
+DB_PORT=3310
+DB_USER=root
+DB_PASSWORD=your-mysql-password
+DB_NAME=muonline
+
+# ============================================================
+# REDIS (External Redis)
+# ============================================================
+# Your external Redis connection details
+REDIS_HOST=your-redis-host-or-ip
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+
+# ============================================================
+# FILE UPLOAD & LOGGING
+# ============================================================
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=5242880
+LOG_LEVEL=info

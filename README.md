@@ -150,16 +150,23 @@ npm run dev
 
 ## Production Deployment
 
-### Linux (Recommended - Coolify/VPS)
+### Coolify (Recommended for Docker-based deployment)
 
-#### Using Coolify (Recommended)
+See [docs/deployment-guide-coolify.md](docs/deployment-guide-coolify.md) for detailed Coolify deployment instructions.
 
-1. **Create new project in Coolify**
-2. **Select Docker Compose or Nixpacks**
-3. **Configure environment variables**
-4. **Deploy**
+**Quick Start:**
+1. Create new project in Coolify
+2. Select Docker Compose deployment type
+3. Configure environment variables (see `.env.production.example`)
+4. Deploy
 
-#### Manual Linux Deployment
+The project includes:
+- `Dockerfile` - Multi-stage build (client + server)
+- `docker-compose.yml` - With MySQL and Redis services
+- `.dockerignore` - Optimized build context
+- `.env.production.example` - Production environment template
+
+### Manual Linux Deployment
 
 1. **Install dependencies**
 ```bash
