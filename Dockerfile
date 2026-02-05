@@ -17,8 +17,8 @@ WORKDIR /app/client
 # Copy client package files
 COPY client/package.json client/package-lock.json* ./
 
-# Install client dependencies
-RUN npm ci --only=production=false
+# Install client dependencies (npm ci installs all dependencies from lock file)
+RUN npm ci
 
 # Copy client source
 COPY client/ ./
@@ -46,7 +46,7 @@ WORKDIR /app
 COPY server/package*.json ./
 
 # Install all dependencies (including tsx for TypeScript execution)
-RUN npm ci --production=false && \
+RUN npm ci && \
     npm cache clean --force
 
 # Copy server source
