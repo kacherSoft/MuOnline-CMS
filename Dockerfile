@@ -14,11 +14,11 @@ FROM node:20-alpine AS client-builder
 
 WORKDIR /app/client
 
-# Copy client package files
-COPY client/package.json client/package-lock.json* ./
+# Copy client package file
+COPY client/package.json ./
 
-# Install client dependencies (npm ci installs all dependencies from lock file)
-RUN npm ci
+# Install client dependencies
+RUN npm install
 
 # Copy client source
 COPY client/ ./
@@ -42,11 +42,11 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package files
-COPY server/package*.json ./
+# Copy package file
+COPY server/package.json ./
 
 # Install all dependencies (including tsx for TypeScript execution)
-RUN npm ci && \
+RUN npm install && \
     npm cache clean --force
 
 # Copy server source
