@@ -1,0 +1,24 @@
+﻿{
+    "version":  1,
+    "phases":  {
+                   "system_deps":  "done",
+                   "node_deps":  "done",
+                   "python_env":  "done",
+                   "verify":  "done",
+                   "chocolatey":  "done"
+               },
+    "packages":  {
+                     "failed":  [
+
+                                ],
+                     "skipped":  [
+
+                                 ],
+                     "installed":  [
+
+                                   ]
+                 },
+    "prefer_package_manager":  "auto",
+    "last_updated":  "2026-02-04T22:44:20Z",
+    "started_at":  "2026-02-04T22:41:13Z"
+}
