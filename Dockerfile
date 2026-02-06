@@ -20,7 +20,9 @@ COPY client/ ./
 # Build client for production with environment variables
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_SOCKET_URL=${VITE_SOCKET_URL}
-RUN npm install && npm run build
+RUN npm install && \
+    chmod -R +x node_modules/.bin && \
+    npm run build
 
 # ------------------------------------------------------------
 # Stage 2: Production Image
