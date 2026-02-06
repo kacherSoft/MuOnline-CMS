@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(requestLoggerMiddleware);
 
 // Serve static frontend files
-const frontendDist = path.join(__dirname, '../../client/dist');
+const frontendDist = path.resolve(process.cwd(), 'client/dist');
 app.use(express.static(frontendDist, {
   maxAge: '1h',
   etag: true
