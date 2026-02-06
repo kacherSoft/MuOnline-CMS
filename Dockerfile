@@ -3,25 +3,32 @@
 # Multi-stage build for Coolify deployment
 # ============================================================
 
-# Build arguments for client-side environment variables
-ARG VITE_API_URL=/api
-ARG VITE_SOCKET_URL=/
-
 # ------------------------------------------------------------
 # Stage 1: Build Client (React + Vite)
 # ------------------------------------------------------------
 FROM node:20-alpine AS client-builder
 
+# Build arguments for client-side environment variables
+ARG VITE_API_URL=/api
+ARG VITE_SOCKET_URL=/
+
 WORKDIR /app/client
 
-# Copy all client source first
+# Copy package.json first for better layer caching
+COPY client/package.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy rest of client source
 COPY client/ ./
 
-# Build client for production with environment variables
+# Set environment variables for build
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_SOCKET_URL=${VITE_SOCKET_URL}
-RUN npm install && \
-    chmod -R +x node_modules/.bin && \
+
+# Fix permissions and build (tsc needs execute permission on Alpine)
+RUN chmod -R +x node_modules/.bin && \
     npm run build
 
 # ------------------------------------------------------------
@@ -38,12 +45,18 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy all server source
-COPY server/ ./
+# Copy package.json first for better layer caching
+COPY server/package.json ./
 
-# Install all dependencies (including tsx for TypeScript execution)
-RUN npm install && \
+# Install production dependencies only
+RUN npm install --omit=dev && \
     npm cache clean --force
+
+# Install tsx globally for TypeScript execution (needed at runtime)
+RUN npm install -g tsx
+
+# Copy server source
+COPY server/ ./
 
 # Copy built client from client-builder stage
 COPY --from=client-builder /app/client/dist ./client/dist
@@ -54,8 +67,6 @@ RUN mkdir -p uploads logs && \
 
 # Switch to non-root user
 USER nodejs
-
-WORKDIR /app
 
 # Expose port
 EXPOSE 3000
@@ -69,4 +80,4 @@ ENV NODE_ENV=production
 
 # Start with dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npx", "tsx", "src/server-entry.ts"]
+CMD ["tsx", "src/server-entry.ts"]
