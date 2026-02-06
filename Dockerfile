@@ -14,19 +14,13 @@ FROM node:20-alpine AS client-builder
 
 WORKDIR /app/client
 
-# Copy client package file
-COPY client/package.json ./
-
-# Install client dependencies
-RUN npm install
-
-# Copy client source
+# Copy all client source first
 COPY client/ ./
 
 # Build client for production with environment variables
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_SOCKET_URL=${VITE_SOCKET_URL}
-RUN npm run build
+RUN npm install && npm run build
 
 # ------------------------------------------------------------
 # Stage 2: Production Image
@@ -42,15 +36,12 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package file
-COPY server/package.json ./
+# Copy all server source
+COPY server/ ./
 
 # Install all dependencies (including tsx for TypeScript execution)
 RUN npm install && \
     npm cache clean --force
-
-# Copy server source
-COPY server/ ./
 
 # Copy built client from client-builder stage
 COPY --from=client-builder /app/client/dist ./client/dist
