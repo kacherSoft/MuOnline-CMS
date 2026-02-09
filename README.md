@@ -4,14 +4,26 @@ A modern Content Management System for MuOnline Season 19.2, built with React 18
 
 ## Features
 
-- **Chat-First Architecture** - Real-time WebSocket communication
-- **JWT Authentication** - Secure token-based auth with refresh tokens
-- **Modern UI** - React 18 + Vite + Tailwind CSS
+### Core Features
+- **Real-time Chat System** - Socket.io based global, trade, guild, and support channels
+- **Character Rankings** - Multiple sorting options, class filters, search functionality
+- **Guild Rankings** - Score-based rankings with member counts
+- **Admin Dashboard** - Real-time statistics, online players, server management
+- **News System** - Dynamic news articles with rich content
+- **Downloads Section** - Client downloads and resources
+- **JWT Authentication** - Secure token-based authentication
+
+### Technical Features
+- **Chat-First Architecture** - Real-time WebSocket communication with Socket.io
+- **JWT Authentication** - Secure token-based auth
+- **Modern UI** - React 18 + Vite + Tailwind CSS + Framer Motion
 - **Type-Safe** - Full TypeScript coverage
 - **RESTful API** - Express.js with proper middleware
-- **Database Support** - MySQL 8 with migrations
-- **Caching** - Redis for session and data caching
+- **Database Support** - MySQL/MariaDB with MuOnline schema
+- **Caching** - Redis for Socket.io scaling and data caching
 - **Responsive Design** - Mobile-friendly interface
+- **CI/CD Pipeline** - GitHub Actions for automated testing and deployment
+- **Docker Support** - Multi-stage builds for production
 
 ## Tech Stack
 
@@ -150,23 +162,57 @@ npm run dev
 
 ## Production Deployment
 
-### Coolify (Recommended for Docker-based deployment)
+MuCMS supports multiple deployment methods. For detailed instructions, see the deployment documentation:
 
-See [docs/deployment-guide-coolify.md](docs/deployment-guide-coolify.md) for detailed Coolify deployment instructions.
+- [**Deployment Guide**](docs/DEPLOYMENT.md) - Complete deployment instructions
+- [**API Documentation**](docs/API.md) - API endpoints and Socket.io events
+- [**Database Documentation**](docs/DATABASE.md) - Database schema, queries, and configuration
+- [**Troubleshooting Guide**](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
-**Quick Start:**
-1. Create new project in Coolify
-2. Select Docker Compose deployment type
-3. Configure environment variables (see `.env.production.example`)
-4. Deploy
+### Quick Deployment (Docker Compose)
 
-The project includes:
-- `Dockerfile` - Multi-stage build (client + server)
-- `docker-compose.yml` - With MySQL and Redis services
-- `.dockerignore` - Optimized build context
-- `.env.production.example` - Production environment template
+**Prerequisites:**
+- Docker & Docker Compose installed
+- MySQL/MariaDB database running
 
-### Manual Linux Deployment
+**Steps:**
+
+1. Clone and configure:
+```bash
+git clone <repository-url> MuCMS
+cd MuCMS
+cp .env.production.example .env.production
+# Edit .env.production with your database credentials
+```
+
+2. Deploy with Docker Compose:
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+3. Access at: `http://localhost:3000`
+
+**Production Features:**
+- Multi-stage Docker build (optimized size)
+- Health checks
+- Redis caching for Socket.io
+- Nginx reverse proxy support
+- PM2 process manager support
+
+### CI/CD Pipeline
+
+The project includes GitHub Actions workflow (`.github/workflows/ci-cd.yml`) for:
+- Automated testing
+- Docker image builds
+- Deployment triggers
+
+**Features:**
+- Lint & type checking
+- Build verification
+- Docker image publishing to GitHub Container Registry
+- Deployment automation
+
+### Manual Linux Deployment (PM2)
 
 1. **Install dependencies**
 ```bash
@@ -292,22 +338,36 @@ See [docs/deployment-guide-windows.md](docs/deployment-guide-windows.md) for det
 
 ## API Endpoints
 
+For complete API documentation including:
+- REST endpoints (Auth, Chat, Rankings, Admin, News, Downloads)
+- Socket.io events (real-time chat)
+- Request/response formats
+- Authentication requirements
+- Rate limits
+
+See: [**API Documentation**](docs/API.md)
+
+**Quick Reference:**
+
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh` - Refresh access token
 - `POST /api/auth/logout` - Logout user
 
-### News
-- `GET /api/news` - Get all news
-- `GET /api/news/:id` - Get single news
-- `POST /api/news` - Create news (admin)
-- `PUT /api/news/:id` - Update news (admin)
-- `DELETE /api/news/:id` - Delete news (admin)
+### Chat
+- `GET /api/chat/messages` - Get chat messages
+- `POST /api/chat/messages` - Send message
+- `GET /api/chat/channels` - Get channels
+- Socket.io: `sendMessage`, `message`, `onlineCount`
 
-### Server Settings
-- `GET /api/server-settings` - Get settings
-- `PUT /api/server-settings` - Update settings (admin)
+### Rankings
+- `GET /api/rankings/characters` - Character rankings
+- `GET /api/rankings/guilds` - Guild rankings
+
+### Admin
+- `GET /api/admin/stats` - Server statistics
+- `GET /api/admin/online-players` - Online players
+- `POST /api/admin/ban` - Ban player
 
 ### Health
 - `GET /health` - Health check endpoint
@@ -332,11 +392,24 @@ npm run preview    # Preview production build
 
 ## Database Schema
 
-The application uses MySQL 8 with the following main tables:
+The application uses MySQL 8 with MuOnline Season 19.2 database schema.
 
-- `users` - User accounts
-- `news` - News articles
-- `server_settings` - Server configuration
+For complete database documentation including:
+- MuOnline table structures (Character, Guild, MEMB_INFO, etc.)
+- Column descriptions and data types
+- Database queries and examples
+- Connection pool configuration
+- Security best practices
+- Backup and restore procedures
+
+See: [**Database Documentation**](docs/DATABASE.md)
+
+**Key Tables:**
+- `Character` - Player character data
+- `Guild` - Guild information
+- `GuildMember` - Guild membership
+- `MEMB_INFO` - Account/member information
+- `AccountCharacter` - Account to character mapping
 
 ## Contributing
 
