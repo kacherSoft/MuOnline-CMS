@@ -1,0 +1,99 @@
+/**
+ * MuOnline Season 19.2 Theme Variables
+ * Dark blue primary palette with ice blue and gold accents
+ */
+
+:root {
+  /* MuOnline Season 19.2 Palette */
+  --mu-bg-dark: #0a1628;
+  --mu-bg-medium: #122035;
+  --mu-bg-light: #1a2d4a;
+  --mu-bg-elevated: #253a52;
+
+  /* Primary - Ice Blue */
+  --mu-primary: #00d4ff;
+  --mu-primary-hover: #00b8e6;
+  --mu-primary-light: rgba(0, 212, 255, 0.1);
+  --mu-primary-glow: rgba(0, 212, 255, 0.5);
+
+  /* Accent - Gold */
+  --mu-accent: #ffd700;
+  --mu-accent-hover: #e6c200;
+  --mu-accent-light: rgba(255, 215, 0, 0.1);
+  --mu-accent-glow: rgba(255, 215, 0, 0.5);
+
+  /* Text Colors */
+  --mu-text-primary: #ffffff;
+  --mu-text-secondary: #a0b0c0;
+  --mu-text-muted: #6b7280;
+
+  /* Semantic Colors */
+  --mu-success: #22c55e;
+  --mu-success-light: rgba(34, 197, 94, 0.1);
+  --mu-danger: #ef4444;
+  --mu-danger-light: rgba(239, 68, 68, 0.1);
+  --mu-warning: #f59e0b;
+  --mu-warning-light: rgba(245, 158, 11, 0.1);
+  --mu-info: #3b82f6;
+  --mu-info-light: rgba(59, 130, 246, 0.1);
+
+  /* Border Colors */
+  --mu-border-primary: #00d4ff;
+  --mu-border-accent: #ffd700;
+  --mu-border-muted: rgba(255, 255, 255, 0.1);
+
+  /* Glow Effects */
+  --mu-glow-primary: 0 0 20px rgba(0, 212, 255, 0.5);
+  --mu-glow-accent: 0 0 20px rgba(255, 215, 0, 0.5);
+  --mu-glow-success: 0 0 20px rgba(34, 197, 94, 0.5);
+  --mu-glow-danger: 0 0 20px rgba(239, 68, 68, 0.5);
+
+  /* Spacing */
+  --mu-spacing-xs: 0.25rem;
+  --mu-spacing-sm: 0.5rem;
+  --mu-spacing-md: 1rem;
+  --mu-spacing-lg: 1.5rem;
+  --mu-spacing-xl: 2rem;
+  --mu-spacing-2xl: 3rem;
+
+  /* Borders */
+  --mu-border-radius: 8px;
+  --mu-border-radius-lg: 12px;
+  --mu-border-radius-xl: 16px;
+
+  /* Transitions */
+  --mu-transition-fast: 150ms ease;
+  --mu-transition-normal: 250ms ease;
+  --mu-transition-slow: 350ms ease;
+}
+
+/* Class-specific colors */
+:root {
+  /* Dark Knight - Red/Orange */
+  --mu-class-dk: #ff4444;
+  --mu-class-dk-light: rgba(255, 68, 68, 0.1);
+
+  /* Dark Wizard - Purple */
+  --mu-class-dw: #a855f7;
+  --mu-class-dw-light: rgba(168, 85, 247, 0.1);
+
+  /* Fairy Elf - Green */
+  --mu-class-elf: #22c55e;
+  --mu-class-elf-light: rgba(34, 197, 94, 0.1);
+
+  /* Magic Gladiator - Cyan */
+  --mu-class-mg: #06b6d4;
+  --mu-class-mg-light: rgba(6, 182, 212, 0.1);
+
+  /* Dark Lord - Gold */
+  --mu-class-dl: #ffd700;
+  --mu-class-dl-light: rgba(255, 215, 0, 0.1);
+
+  /* Summoner - Pink */
+  --mu-class-sum: #ec4899;
+  --mu-class-sum-light: rgba(236, 72, 153, 0.1);
+
+  /* Rage Fighter - Orange */
+  --mu-class-rf: #f97316;
+  --mu-class-rf-light: rgba(249, 115, 22, 0.1);
+}

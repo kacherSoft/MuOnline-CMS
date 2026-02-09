@@ -23,7 +23,12 @@ const SettingsPage = lazy(() => import('@/pages/settings-page'));
 // Phase 05: Auth routes
 const AuthRoute = lazy(() => import('./auth-route'));
 const RegisterRoute = lazy(() => import('./register-route'));
+// Phase 04: Rankings components
+const RankingsPage = lazy(() => import('@/features/rankings/components/rankings-page'));
 // Phase 07: Chat components
+const ChatPage = lazy(() => import('@/pages/chat-page'));
+// Phase 07: Profile components
+const CharacterProfilePage = lazy(() => import('@/features/profile/components/character-profile-page'));
 // Phase 10: CMS components
 
 // Suspense wrapper for lazy loaded components
@@ -43,7 +48,8 @@ export const router = createBrowserRouter([
       { path: 'news', element: <SuspenseWrapper><NewsListPage /></SuspenseWrapper> },
       { path: 'news/:id', element: <SuspenseWrapper><NewsDetailPage /></SuspenseWrapper> },
       { path: 'download', element: <SuspenseWrapper><DownloadPage /></SuspenseWrapper> },
-      { path: 'ranking', element: <SuspenseWrapper><PlaceholderHome /></SuspenseWrapper> },
+      { path: 'ranking', element: <SuspenseWrapper><RankingsPage /></SuspenseWrapper> },
+      { path: 'character/:characterName', element: <SuspenseWrapper><CharacterProfilePage /></SuspenseWrapper> },
     ],
   },
 
@@ -55,7 +61,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRootRoute />,
     children: [
       { path: 'character', element: <SuspenseWrapper><PlaceholderHome /></SuspenseWrapper> },
-      { path: 'chat', element: <SuspenseWrapper><PlaceholderHome /></SuspenseWrapper> },
+      { path: 'chat', element: <SuspenseWrapper><ChatPage /></SuspenseWrapper> },
     ],
   },
 

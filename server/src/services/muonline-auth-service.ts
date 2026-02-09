@@ -9,6 +9,7 @@ import { executeQuery, executeInsert } from '../lib/mysql-connection-pool.js';
 import { TokenService } from './jwt-token-service.js';
 import type { LoginRequest, AuthResponse, RefreshResponse, AuthUser, RegisterRequest, RegisterResponse } from '../types/auth-types.js';
 import { logger } from '../utils/winston-logger.js';
+import { AppError } from '../middleware/error-handler-middleware.js';
 
 export class AuthService {
   /**
@@ -31,7 +32,7 @@ export class AuthService {
 
     if (users.length === 0) {
       logger.warn(`Login attempt with non-existent user: ${username}`);
-      throw new Error('Invalid credentials');
+      throw new AppError(401, 'Invalid credentials');
     }
 
     const user = users[0];
@@ -41,7 +42,7 @@ export class AuthService {
 
     if (!isValidPassword) {
       logger.warn(`Failed login attempt for user: ${username}`);
-      throw new Error('Invalid credentials');
+      throw new AppError(401, 'Invalid credentials');
     }
 
     logger.info(`User logged in successfully: ${username} (ID: ${user.guid})`);
@@ -91,7 +92,7 @@ export class AuthService {
 
     if (existing.length > 0) {
       logger.warn(`Registration attempt with existing username: ${username}`);
-      throw new Error('Username already exists');
+      throw new AppError(409, 'Username already exists');
     }
 
     // Check if email already exists (if provided)
@@ -103,13 +104,13 @@ export class AuthService {
 
       if (existingEmail.length > 0) {
         logger.warn(`Registration attempt with existing email: ${email}`);
-        throw new Error('Email already registered');
+        throw new AppError(409, 'Email already registered');
       }
     }
 
-    // Hash password using DV Team algorithm: SHA256(username + ":" + password)
-    // This allows new accounts to login to both CMS and game server
-    const passwordHash = crypto.createHash('sha256').update(`${username}:${password}`).digest('hex');
+    // Hash password using bcrypt for secure password storage
+    // This allows new accounts to login to CMS with strong password hashing
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // Insert new account
     const accountId = await executeInsert(
@@ -160,22 +161,24 @@ export class AuthService {
     refreshToken: string;
       expires_at: number;
     }>(
-      'SELECT * FROM user_sessions WHERE token = ? AND account_id = ? LIMIT 1',
-      [refreshToken, payload.userId]
+      'SELECT * FROM user_sessions WHERE token = ? AND account_id = ? AND expires_at > ? LIMIT 1',
+      [refreshToken, payload.userId, Date.now()]
     );
 
     if (sessions.length === 0) {
       logger.warn(`Refresh token not found for user ID: ${payload.userId}`);
-      throw new Error('Invalid or expired refresh token');
+      throw new AppError(401, 'Invalid or expired refresh token');
     }
 
     logger.info(`Token refreshed for user: ${payload.username} (ID: ${payload.userId})`);
 
-    // Generate new access token
+    // Recompute GM status and generate new access token
+    const isGameMaster = await this.checkGameMasterStatus(payload.userId);
     const accessToken = TokenService.generateAccessToken({
       userId: payload.userId,
       username: payload.username,
       accountId: payload.accountId,
+      isGameMaster,
     });
 
     return { accessToken };
@@ -216,7 +219,7 @@ export class AuthService {
     );
 
     if (users.length === 0) {
-      throw new Error('User not found');
+      throw new AppError(404, 'User not found');
     }
 
     const user = users[0];
@@ -282,12 +285,13 @@ export class AuthService {
   static async cleanupExpiredSessions(): Promise<void> {
     const now = Date.now();
 
-    const result = await executeQuery(
+    const pool = (await import('../lib/mysql-connection-pool.js')).getConnectionPool();
+    const [result] = await pool.execute(
       'DELETE FROM user_sessions WHERE expires_at < ?',
       [now]
     );
 
-    logger.info(`Cleaned up ${result.length} expired sessions`);
+    logger.info(`Cleaned up ${(result as any).affectedRows} expired sessions`);
   }
 
   /**

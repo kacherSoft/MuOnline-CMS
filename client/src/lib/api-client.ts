@@ -36,18 +36,9 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Handle 401 - Unauthorized
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/login';
-    }
-
-    // Handle network errors
     if (!error.response) {
       console.error('Network error:', error.message);
     }
-
     return Promise.reject(error);
   }
 );

@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename);
 
 // Create Express app
 const app: Application = express();
+app.set('trust proxy', 1);
 
 // =====================================================
 // MIDDLEWARE
@@ -66,9 +67,19 @@ app.use('/api/news', newsRouter);
 import serverSettingsRouter from './routes/server-settings-routes.js';
 app.use('/api/server-settings', serverSettingsRouter);
 
-// Phase 06: /api/chat/* (WebSocket)
+// Phase 09: Ranking routes
+import { rankingRouter } from './routes/ranking-routes.js';
+app.use('/api/rankings', rankingRouter);
+
+// Phase 01: Chat routes (REST + WebSocket)
+import chatRoutes from './routes/chat-routes.js';
+app.use('/api/chat', chatRoutes);
+
+// Phase 05: Admin routes
+import { adminRouter } from './routes/admin-routes.js';
+app.use('/api/admin', adminRouter);
+
 // Phase 08: /api/characters/*
-// Phase 09: /api/rankings
 
 // =====================================================
 // SPA FALLBACK (serve index.html for non-API routes)

@@ -14,7 +14,9 @@ export const getSocket = (): Socket => {
   if (!socket) {
     const token = localStorage.getItem('access_token');
 
-    socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001', {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL;
+    const url = (!socketUrl || socketUrl === '/') ? window.location.origin : socketUrl;
+    socket = io(url, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,

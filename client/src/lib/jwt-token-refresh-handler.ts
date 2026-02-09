@@ -4,11 +4,13 @@
  */
 
 import { apiClient } from './api-client';
+import { useAuthStore } from '@/stores/auth-store';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Refresh state to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
+let interceptorInstalled = false;
 
 /**
  * Subscribe to token refresh completion
@@ -42,11 +44,13 @@ export async function refreshAccessToken(): Promise<string> {
     const response = await apiClient.post('/auth/refresh', { refreshToken });
     const { accessToken, user } = response.data.data;
 
-    // Update access token in storage
-    localStorage.setItem('access_token', accessToken);
-
-    // Note: We don't update the store here because this function
-    // can be called from outside React context (interceptor)
+    // Update token in both localStorage and Zustand store
+    const store = useAuthStore.getState();
+    if (store.user && store.refreshToken) {
+      store.setAuth(store.user, accessToken, store.refreshToken);
+    } else {
+      localStorage.setItem('access_token', accessToken);
+    }
 
     return accessToken;
   } catch (error) {
@@ -59,6 +63,9 @@ export async function refreshAccessToken(): Promise<string> {
  * Setup axios interceptor for automatic token refresh on 401 errors
  */
 export function setupTokenRefreshInterceptor(): void {
+  if (interceptorInstalled) return;
+  interceptorInstalled = true;
+
   apiClient.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
@@ -94,14 +101,8 @@ export function setupTokenRefreshInterceptor(): void {
           }
           return apiClient(originalRequest);
         } catch (refreshError) {
-          // Refresh failed, clear auth and redirect to login
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('auth-storage');
-
-          // Redirect to login
+          useAuthStore.getState().clearAuth();
           window.location.href = '/login';
-
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;

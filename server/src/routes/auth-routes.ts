@@ -5,8 +5,8 @@
 
 import { Router } from 'express';
 import { AuthService } from '../services/muonline-auth-service.js';
-import { loginRateLimit } from '../middleware/rate-limit-middleware.js';
-import { authenticate, AuthRequest } from '../middleware/auth-middleware.js';
+import { loginRateLimit, registerRateLimit, refreshRateLimit } from '../middleware/rate-limit-middleware.js';
+import { authenticate, requireGameMaster, AuthRequest } from '../middleware/auth-middleware.js';
 import { asyncHandler } from '../utils/async-handler-wrapper.js';
 import { AppError } from '../middleware/error-handler-middleware.js';
 import type { LoginRequest, RefreshRequest, RegisterRequest } from '../types/auth-types.js';
@@ -32,8 +32,8 @@ router.post(
       throw new AppError(400, 'Username must be 3-20 characters');
     }
 
-    if (credentials.password.length < 4) {
-      throw new AppError(400, 'Password must be at least 4 characters');
+    if (credentials.password.length < 6) {
+      throw new AppError(400, 'Password must be at least 6 characters');
     }
 
     const result = await AuthService.login(credentials);
@@ -51,6 +51,7 @@ router.post(
  */
 router.post(
   '/register',
+  registerRateLimit,
   asyncHandler(async (req, res) => {
     const data: RegisterRequest = req.body;
 
@@ -90,6 +91,7 @@ router.post(
  */
 router.post(
   '/refresh',
+  refreshRateLimit,
   asyncHandler(async (req, res) => {
     const { refreshToken }: RefreshRequest = req.body;
 
@@ -165,6 +167,8 @@ router.get(
  */
 router.post(
   '/cleanup',
+  authenticate,
+  requireGameMaster,
   asyncHandler(async (req, res) => {
     await AuthService.cleanupExpiredSessions();
 

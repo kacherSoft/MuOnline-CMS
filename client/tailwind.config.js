@@ -81,6 +81,10 @@ export default {
         warning: '#f59e0b',
         error: '#ef4444',
         info: '#3b82f6',
+
+        // MuOnline Theme Colors
+        'ice-blue': '#00d4ff',
+        'gold': '#ffd700',
       },
 
       fontFamily: {

@@ -1,6 +1,6 @@
 /**
  * Rate Limit Middleware
- * Login attempt rate limiting to prevent brute force attacks
+ * Rate limiting to prevent abuse and brute force attacks
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -16,22 +16,20 @@ interface RateLimitStore {
   [key: string]: RateLimitEntry;
 }
 
-// In-memory rate limit store (consider Redis for production)
-const loginAttempts: RateLimitStore = {};
-
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+// In-memory rate limit stores (consider Redis for production)
+const stores = new Map<string, RateLimitStore>();
 const CLEANUP_INTERVAL_MS = 60 * 1000; // Clean up expired entries every minute
 
 /**
- * Clean up expired rate limit entries
+ * Clean up expired rate limit entries across all stores
  */
 function cleanupExpiredEntries() {
   const now = Date.now();
-
-  for (const [key, entry] of Object.entries(loginAttempts)) {
-    if (now > entry.resetTime) {
-      delete loginAttempts[key];
+  for (const [storeKey, store] of stores.entries()) {
+    for (const [key, entry] of Object.entries(store)) {
+      if (now > entry.resetTime) {
+        delete store[key];
+      }
     }
   }
 }
@@ -40,64 +38,70 @@ function cleanupExpiredEntries() {
 setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL_MS);
 
 /**
- * Rate limit middleware for login endpoint
+ * Generic rate limiter factory function
  */
-export const loginRateLimit = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
-  const now = Date.now();
-
-  // Check existing attempts
-  const attempt = loginAttempts[ip];
-
-  if (!attempt || now > attempt.resetTime) {
-    // First attempt or window expired - reset counter
-    loginAttempts[ip] = {
-      count: 1,
-      resetTime: now + WINDOW_MS,
-    };
-
-    logger.debug(`Login attempt ${1}/${MAX_ATTEMPTS} from IP: ${ip}`);
-    return next();
+function createRateLimiter(maxAttempts: number, windowMs: number, identifier: string) {
+  // Get or create store for this limiter
+  let store = stores.get(identifier);
+  if (!store) {
+    store = {};
+    stores.set(identifier, store);
   }
 
-  // Increment counter
-  attempt.count++;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
 
-  if (attempt.count > MAX_ATTEMPTS) {
-    const waitMinutes = Math.ceil((attempt.resetTime - now) / 60000);
+    // Check existing attempts
+    const attempt = store[ip];
 
-    logger.warn(`Rate limit exceeded for IP: ${ip}. Attempts: ${attempt.count}`);
+    if (!attempt || now > attempt.resetTime) {
+      // First attempt or window expired - reset counter
+      store[ip] = {
+        count: 1,
+        resetTime: now + windowMs,
+      };
 
-    throw new AppError(
-      429,
-      `Too many login attempts. Please try again in ${waitMinutes} minute(s).`
-    );
-  }
+      logger.debug(`${identifier} attempt ${1}/${maxAttempts} from IP: ${ip}`);
+      return next();
+    }
 
-  logger.debug(`Login attempt ${attempt.count}/${MAX_ATTEMPTS} from IP: ${ip}`);
-  next();
-};
+    // Increment counter
+    attempt.count++;
 
-/**
- * Get remaining attempts for an IP address
- */
-export function getRemainingAttempts(ip: string): {
-  remaining: number;
-  resetTime: number;
-} {
-  const now = Date.now();
-  const attempt = loginAttempts[ip];
+    if (attempt.count > maxAttempts) {
+      const waitMinutes = Math.ceil((attempt.resetTime - now) / 60000);
 
-  if (!attempt || now > attempt.resetTime) {
-    return { remaining: MAX_ATTEMPTS, resetTime: now + WINDOW_MS };
-  }
+      logger.warn(`Rate limit exceeded for ${identifier}. IP: ${ip}. Attempts: ${attempt.count}`);
 
-  const remaining = Math.max(0, MAX_ATTEMPTS - attempt.count);
-  return { remaining, resetTime: attempt.resetTime };
+      throw new AppError(
+        429,
+        `Too many ${identifier} attempts. Please try again in ${waitMinutes} minute(s).`
+      );
+    }
+
+    logger.debug(`${identifier} attempt ${attempt.count}/${maxAttempts} from IP: ${ip}`);
+    next();
+  };
 }
 
-export default { loginRateLimit, getRemainingAttempts };
+// =====================================================
+// RATE LIMITERS
+// =====================================================
+
+/**
+ * Rate limit middleware for login endpoint (5 per 15 minutes)
+ */
+export const loginRateLimit = createRateLimiter(5, 15 * 60 * 1000, 'login');
+
+/**
+ * Rate limit middleware for register endpoint (3 per hour)
+ */
+export const registerRateLimit = createRateLimiter(3, 60 * 60 * 1000, 'register');
+
+/**
+ * Rate limit middleware for refresh endpoint (10 per minute)
+ */
+export const refreshRateLimit = createRateLimiter(10, 60 * 1000, 'refresh');
+
+export default { loginRateLimit, registerRateLimit, refreshRateLimit };

@@ -10,27 +10,30 @@ import { apiClient } from '@/lib/api-client';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Setup token refresh interceptor on mount
     setupTokenRefreshInterceptor();
 
-    // Restore auth state from localStorage
-    const accessToken = localStorage.getItem('access_token');
-    const refreshToken = localStorage.getItem('refresh_token');
+    const storedState = useAuthStore.getState();
+    const accessToken = storedState.accessToken || localStorage.getItem('access_token');
 
-    if (accessToken) {
-      // Verify token is still valid by calling /auth/me
-      apiClient.get('/auth/me')
-        .then((response) => {
-          const userData = response.data.data;
-          useAuthStore.getState().setAuth(userData, accessToken, refreshToken || '');
-        })
-        .catch(() => {
-          // Token invalid, clear auth
-          useAuthStore.getState().clearAuth();
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-        });
+    if (!accessToken) {
+      useAuthStore.getState().setAuthReady();
+      return;
     }
+
+    apiClient.get('/auth/me')
+      .then((response) => {
+        const userData = response.data.data;
+        const refreshToken = storedState.refreshToken || localStorage.getItem('refresh_token') || '';
+        useAuthStore.getState().setAuth(userData, accessToken, refreshToken);
+      })
+      .catch(() => {
+        useAuthStore.getState().clearAuth();
+      })
+      .finally(() => {
+        if (!useAuthStore.getState().isAuthReady) {
+          useAuthStore.getState().setAuthReady();
+        }
+      });
   }, []);
 
   return React.createElement(React.Fragment, null, children);

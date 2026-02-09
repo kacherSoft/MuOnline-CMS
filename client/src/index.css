@@ -94,4 +94,52 @@
   .glow-secondary {
     box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
   }
+
+  /* MuOnline Chat Theme */
+  .ice-blue {
+    color: #00d4ff;
+  }
+
+  .bg-ice-blue {
+    background-color: #00d4ff;
+  }
+
+  .text-gold {
+    color: #ffd700;
+  }
+
+  .bg-gold {
+    background-color: #ffd700;
+  }
+
+  /* Animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  @keyframes bounce-slow {
+    0%, 100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
+  .animate-bounce {
+    animation: bounce-slow 1s infinite;
+  }
 }
