@@ -7,7 +7,6 @@ import * as React from 'react';
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../stores/chat-store';
 import { MessageItem } from './message-item-component';
-import { useChatSocket } from '../hooks/use-chat-socket';
 import { cn } from '@/lib/utils';
 import type { Message } from '../types/chat-types';
 
@@ -15,17 +14,11 @@ export function MessageList() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { messages, currentChannel } = useChatStore();
-  const { requestHistory } = useChatSocket();
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // Load initial message history
-  useEffect(() => {
-    requestHistory(currentChannel.id, 50);
-  }, [currentChannel.id, requestHistory]);
 
   // Filter messages for current channel
   const channelMessages = messages.filter((msg) => msg.channelId === currentChannel.id);

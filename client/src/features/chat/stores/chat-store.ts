@@ -43,14 +43,18 @@ export const useChatStore = create<ChatStore>()(
 
       // Actions
       addMessage: (message: Message) =>
-        set((state) => ({
-          messages: [...state.messages, message],
-        })),
+        set((state) => {
+          if (state.messages.some((m) => m.id === message.id)) return state;
+          return { messages: [...state.messages, message] };
+        }),
 
       addMessages: (messages: Message[]) =>
-        set((state) => ({
-          messages: [...messages, ...state.messages],
-        })),
+        set((state) => {
+          const existingIds = new Set(state.messages.map((m) => m.id));
+          const newMessages = messages.filter((m) => !existingIds.has(m.id));
+          if (newMessages.length === 0) return state;
+          return { messages: [...newMessages, ...state.messages] };
+        }),
 
       setOnlineUsers: (users: OnlineUser[]) =>
         set({ onlineUsers: users }),

@@ -85,6 +85,20 @@ export function useChatSocket() {
         console.log('Chat socket connected');
         useChatStore.getState().setConnected(true);
         socket.emit('chat:join', 'global');
+        socket.emit('chat:history', { channel: 'global', limit: 50 }, (response: any) => {
+          if (response?.success && response.messages) {
+            const messages = response.messages.map((msg: any) => ({
+              id: String(msg.id),
+              channelId: msg.channel || 'global',
+              senderId: msg.accountId,
+              senderName: msg.characterName || 'Unknown',
+              content: msg.message,
+              timestamp: new Date(msg.createdAt),
+              isSystemMessage: msg.messageType === 'system',
+            }));
+            useChatStore.getState().addMessages(messages);
+          }
+        });
       });
 
       socket.on('disconnect', () => {

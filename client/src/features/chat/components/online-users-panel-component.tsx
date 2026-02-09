@@ -14,28 +14,6 @@ const STATUS_COLORS = {
   busy: 'bg-red-500',
 };
 
-const CLASS_ICONS: Record<string, string> = {
-  'Dark Wizard': '🔮',
-  'Soul Master': '✨',
-  'Grand Master': '🌟',
-  'Dark Knight': '⚔️',
-  'Blade Knight': '🗡️',
-  'Blade Master': '💎',
-  'Fairy Elf': '🧝',
-  'Muse Elf': '🏹',
-  'High Elf': '🌿',
-  'Magic Gladiator': '🔥',
-  'Duel Master': '⚡',
-  'Dark Lord': '👑',
-  'Lord Emperor': '🏰',
-  'Summoner': '🌀',
-  'Bloody Summoner': '💀',
-  'Dimension Master': '🌌',
-  'Rage Fighter': '👊',
-  'Fist Master': '🥊',
-  'Grow Lancer': '🛡️',
-  'Mirage Lancer': '🔱',
-};
 
 export function OnlineUsersPanel() {
   const { onlineUsers } = useChatStore();
@@ -85,17 +63,7 @@ export function OnlineUsersPanel() {
 
                 {/* User info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-white truncate">{user.username}</p>
-                    {user.characterClass && (
-                      <span title={user.characterClass} className="text-xs">
-                        {CLASS_ICONS[user.characterClass] || '⚔️'}
-                      </span>
-                    )}
-                  </div>
-                  {user.characterName && (
-                    <p className="text-xs text-gray-500 truncate">{user.characterName}</p>
-                  )}
+                  <p className="text-sm font-medium text-white truncate">{user.username}</p>
                 </div>
 
                 {/* Channel badge */}

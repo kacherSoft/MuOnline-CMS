@@ -1,14 +1,8 @@
-/**
- * Message Item Component
- * Single message display with avatar, username, class badge, timestamp
- */
-
 import * as React from 'react';
 import type { Message } from '../types/chat-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
 
-// Format relative time helper
 function formatRelativeTime(timestamp: Date): string {
   const now = new Date();
   const diff = now.getTime() - timestamp.getTime();
@@ -30,45 +24,15 @@ interface MessageItemProps {
   isGrouped?: boolean;
 }
 
-const CLASS_COLORS: Record<string, string> = {
-  'Dark Wizard': 'text-purple-400',
-  'Soul Master': 'text-purple-300',
-  'Grand Master': 'text-purple-200',
-  'Dark Knight': 'text-red-400',
-  'Blade Knight': 'text-red-300',
-  'Blade Master': 'text-red-200',
-  'Fairy Elf': 'text-green-400',
-  'Muse Elf': 'text-green-300',
-  'High Elf': 'text-green-200',
-  'Magic Gladiator': 'text-yellow-400',
-  'Duel Master': 'text-yellow-300',
-  'Dark Lord': 'text-blue-400',
-  'Lord Emperor': 'text-blue-300',
-  'Summoner': 'text-pink-400',
-  'Bloody Summoner': 'text-pink-300',
-  'Dimension Master': 'text-pink-200',
-  'Rage Fighter': 'text-orange-400',
-  'Fist Master': 'text-orange-300',
-  'Grow Lancer': 'text-cyan-400',
-  'Mirage Lancer': 'text-cyan-300',
-};
-
 export function MessageItem({ message, showAvatar = true, isGrouped = false }: MessageItemProps) {
   const { user } = useAuthStore();
   const isOwnMessage = message.senderId === user?.accountId || message.senderId === user?.id;
   const isSystemMessage = message.isSystemMessage;
-
-  // Get class color
-  const classColor = message.senderCharacterClass
-    ? CLASS_COLORS[message.senderCharacterClass] || 'text-gray-400'
-    : 'text-gray-400';
-
-  // Format relative time
   const timeAgo = formatRelativeTime(new Date(message.timestamp));
 
   if (isSystemMessage) {
     return (
-      <div className="flex justify-center my-2">
+      <div className="flex justify-center my-2 px-4">
         <span className="text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full">
           {message.content}
         </span>
@@ -79,48 +43,45 @@ export function MessageItem({ message, showAvatar = true, isGrouped = false }: M
   return (
     <div
       className={cn(
-        'flex gap-3 py-1 px-4 hover:bg-white/5 transition-colors',
-        isOwnMessage && 'flex-row-reverse'
+        'flex gap-2 px-4',
+        isGrouped ? 'mt-0.5' : 'mt-3',
+        isOwnMessage ? 'justify-end' : 'justify-start'
       )}
     >
-      {/* Avatar */}
-      {showAvatar && (
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ice-blue to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-ice-blue/20">
-            {message.senderName.charAt(0).toUpperCase()}
-          </div>
+      {!isOwnMessage && (
+        <div className="flex-shrink-0 w-8">
+          {showAvatar ? (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-500 flex items-center justify-center text-xs font-bold text-white">
+              {message.senderName.charAt(0).toUpperCase()}
+            </div>
+          ) : null}
         </div>
       )}
 
-      {/* Message content */}
-      <div className={cn('flex-1 min-w-0', isGrouped && 'ml-11')}>
-        {/* Header (username, class, time) */}
-        {!isGrouped && (
-          <div className={cn('flex items-baseline gap-2 mb-1', isOwnMessage && 'justify-end')}>
-            <div className="flex items-center gap-2">
-              <span className={cn('text-sm font-semibold', isOwnMessage ? 'text-ice-blue' : 'text-white')}>
-                {message.senderName}
-              </span>
-              {message.senderCharacterClass && (
-                <span className={cn('text-xs px-2 py-0.5 rounded bg-white/10', classColor)}>
-                  {message.senderCharacterClass}
-                </span>
-              )}
-            </div>
-            <span className="text-xs text-gray-500">{timeAgo}</span>
-          </div>
+      <div className={cn('max-w-[70%] min-w-[80px]')}>
+        {!isOwnMessage && !isGrouped && (
+          <p className="text-xs font-medium text-cyan-400 mb-0.5 ml-1">
+            {message.senderName}
+          </p>
         )}
 
-        {/* Message text */}
         <div
           className={cn(
-            'inline-block max-w-[80%] px-4 py-2 rounded-2xl',
+            'relative px-3 py-2 rounded-2xl',
             isOwnMessage
-              ? 'bg-ice-blue/20 text-white rounded-tr-sm'
-              : 'bg-white/10 text-gray-100 rounded-tl-sm'
+              ? 'bg-gradient-to-br from-cyan-600/80 to-blue-700/80 text-white'
+              : 'bg-white/10 text-gray-100',
+            isOwnMessage
+              ? isGrouped ? 'rounded-tr-md' : 'rounded-tr-sm'
+              : isGrouped ? 'rounded-tl-md' : 'rounded-tl-sm'
           )}
         >
-          <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
+          <p className="text-sm break-words whitespace-pre-wrap leading-relaxed pr-12">
+            {message.content}
+          </p>
+          <span className="absolute bottom-1.5 right-2.5 text-[10px] text-white/50 whitespace-nowrap">
+            {timeAgo}
+          </span>
         </div>
       </div>
     </div>
