@@ -10,6 +10,7 @@ import { logger } from './utils/winston-logger.js';
 import { initRankingRefreshJob } from './jobs/ranking-refresh-job.js';
 import { initSocketServer } from './socket/socket-server.js';
 import { createRedisClient } from './lib/redis-client.js';
+import { runMigrations } from './lib/auto-migrate.js';
 
 // Start HTTP server
 const server = app.listen(appConfig.port, async () => {
@@ -20,6 +21,13 @@ const server = app.listen(appConfig.port, async () => {
   logger.info(`║  Port: ${appConfig.port.toString().padEnd(53)}║`);
   logger.info(`║  Health: http://localhost:${appConfig.port}/health${' '.repeat(23)}║`);
   logger.info(`╚══════════════════════════════════════════════════════════╝`);
+
+  // Run database migrations
+  try {
+    await runMigrations();
+  } catch (error) {
+    logger.error('Failed to run migrations:', error);
+  }
 
   // Initialize ranking refresh job
   try {
