@@ -21,6 +21,8 @@ const TYPING_TIMEOUT = 3000;
 let sharedSocket: Socket | null = null;
 let sharedSocketToken: string | null = null;
 let socketRefCount = 0;
+let isRefreshingSocketToken = false;
+let didLoadInitialHistory = false;
 
 function getOrCreateSocket(token: string): Socket {
   if (sharedSocket && sharedSocketToken === token && (sharedSocket.connected || sharedSocket.active)) {
@@ -34,9 +36,14 @@ function getOrCreateSocket(token: string): Socket {
     sharedSocket = null;
   }
 
+  didLoadInitialHistory = false;
+
   const socketUrl = getSocketUrl();
   sharedSocket = io(socketUrl, {
-    auth: { token },
+    auth: (cb) => {
+      const latestToken = useAuthStore.getState().accessToken || token;
+      cb({ token: latestToken });
+    },
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
@@ -48,6 +55,12 @@ function getOrCreateSocket(token: string): Socket {
   return sharedSocket;
 }
 
+export function emitChatDelete(messageId: number, cb: (resp: { success: boolean; error?: string }) => void) {
+  const s = sharedSocket;
+  if (!s?.connected) return cb({ success: false, error: 'Not connected to chat server' });
+  s.emit('chat:delete', { messageId }, cb);
+}
+
 function releaseSocket() {
   socketRefCount--;
   if (socketRefCount <= 0 && sharedSocket) {
@@ -56,6 +69,7 @@ function releaseSocket() {
     sharedSocket = null;
     sharedSocketToken = null;
     socketRefCount = 0;
+    didLoadInitialHistory = false;
   }
 }
 
@@ -84,21 +98,23 @@ export function useChatSocket() {
       socket.on('connect', () => {
         console.log('Chat socket connected');
         useChatStore.getState().setConnected(true);
-        socket.emit('chat:join', 'global');
-        socket.emit('chat:history', { channel: 'global', limit: 50 }, (response: any) => {
-          if (response?.success && response.messages) {
-            const messages = response.messages.map((msg: any) => ({
-              id: String(msg.id),
-              channelId: msg.channel || 'global',
-              senderId: msg.accountId,
-              senderName: msg.characterName || 'Unknown',
-              content: msg.message,
-              timestamp: new Date(msg.createdAt),
-              isSystemMessage: msg.messageType === 'system',
-            }));
-            useChatStore.getState().addMessages(messages);
-          }
-        });
+        if (!didLoadInitialHistory) {
+          didLoadInitialHistory = true;
+          socket.emit('chat:history', { channel: 'global', limit: 50 }, (response: any) => {
+            if (response?.success && response.messages) {
+              const messages = response.messages.map((msg: any) => ({
+                id: String(msg.id),
+                channelId: msg.channel || 'global',
+                senderId: msg.accountId,
+                senderName: msg.characterName || 'Unknown',
+                content: msg.message,
+                timestamp: new Date(msg.createdAt),
+                isSystemMessage: msg.messageType === 'system',
+              }));
+              useChatStore.getState().addMessages(messages);
+            }
+          });
+        }
       });
 
       socket.on('disconnect', () => {
@@ -109,9 +125,11 @@ export function useChatSocket() {
       socket.on('connect_error', async (error) => {
         console.error('Socket connection error:', error.message);
         if (error.message.includes('Authentication') || error.message.includes('token')) {
-          const refreshToken = localStorage.getItem('refresh_token');
-          if (refreshToken) {
-            try {
+          if (isRefreshingSocketToken) return;
+          isRefreshingSocketToken = true;
+          try {
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (refreshToken) {
               const apiUrl = import.meta.env.VITE_API_URL || '/api';
               const res = await fetch(`${apiUrl}/auth/refresh`, {
                 method: 'POST',
@@ -121,23 +139,27 @@ export function useChatSocket() {
               if (res.ok) {
                 const data = await res.json();
                 const newToken = data.data?.accessToken;
-                if (newToken && sharedSocket) {
+                if (newToken) {
                   localStorage.setItem('access_token', newToken);
                   useAuthStore.getState().setAuth(
                     useAuthStore.getState().user!,
                     newToken,
                     refreshToken
                   );
-                  sharedSocket.auth = { token: newToken };
-                  sharedSocket.connect();
+                  sharedSocketToken = newToken;
+                  if (sharedSocket) {
+                    sharedSocket.connect();
+                  }
                   return;
                 }
               }
-            } catch {
-              // Refresh failed, fall through to clearAuth
             }
+            useAuthStore.getState().clearAuth();
+          } catch {
+            useAuthStore.getState().clearAuth();
+          } finally {
+            isRefreshingSocketToken = false;
           }
-          useAuthStore.getState().clearAuth();
         }
       });
 
@@ -225,6 +247,10 @@ export function useChatSocket() {
           typingTimeoutRef.current.set(data.accountId, timeout);
         }
       });
+
+      socket.on('chat:message-deleted', (data: { messageId: number; channel: string }) => {
+        useChatStore.getState().deleteMessage(String(data.messageId));
+      });
     }
 
     return () => {
@@ -237,7 +263,18 @@ export function useChatSocket() {
   const sendMessage = useCallback((message: string, channelId: string) => {
     if (sharedSocket?.connected) {
       sharedSocket.emit('chat:send', { message, channel: channelId }, (response: any) => {
-        if (response && !response.success) {
+        if (response?.success && response.message) {
+          const msg = response.message;
+          useChatStore.getState().addMessage({
+            id: String(msg.id),
+            channelId: msg.channel || channelId,
+            senderId: msg.accountId,
+            senderName: msg.characterName || 'Unknown',
+            content: msg.message,
+            timestamp: new Date(msg.createdAt),
+            isSystemMessage: msg.messageType === 'system',
+          });
+        } else if (response && !response.success) {
           console.error('Failed to send message:', response.error);
         }
       });

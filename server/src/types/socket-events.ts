@@ -108,6 +108,13 @@ export interface ClientToServerEvents {
    * Leave a chat channel
    */
   'chat:leave': (channel: string, callback: (response: { success: boolean; error?: string }) => void) => void;
+
+  /**
+   * Delete a chat message
+   */
+  'chat:delete': (data: {
+    messageId: number;
+  }, callback: (response: { success: boolean; error?: string }) => void) => void;
 }
 
 // =====================================================
@@ -149,6 +156,11 @@ export interface ServerToClientEvents {
    * System message
    */
   'chat:system': (message: string) => void;
+
+  /**
+   * Message deleted
+   */
+  'chat:message-deleted': (data: { messageId: number; channel: string }) => void;
 
   /**
    * Error occurred

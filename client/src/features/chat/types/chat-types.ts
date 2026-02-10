@@ -36,6 +36,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   isSystemMessage?: boolean;
+  deletedAt?: number;
 }
 
 export interface OnlineUser {
@@ -94,6 +95,7 @@ export interface ChatStore {
   // Actions
   addMessage: (message: Message) => void;
   addMessages: (messages: Message[]) => void;
+  deleteMessage: (messageId: string) => void;
   setOnlineUsers: (users: OnlineUser[]) => void;
   addOnlineUser: (user: OnlineUser) => void;
   removeOnlineUser: (userId: number) => void;

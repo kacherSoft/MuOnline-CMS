@@ -78,7 +78,7 @@ export async function getChatHistory(
     let query = `
       SELECT id, account_id, character_name, message, message_type, channel, created_at
       FROM chat_messages
-      WHERE channel = ?
+      WHERE channel = ? AND deleted_at IS NULL
     `;
     const params: any[] = [channel];
 
@@ -143,6 +143,51 @@ function escapeHtml(text: string): string {
 }
 
 /**
+ * Delete a chat message (soft delete)
+ */
+export async function deleteMessage(
+  messageId: number,
+  accountId: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // First, fetch the message to verify ownership
+    const messages = await executeQuery<any>(
+      `SELECT id, account_id, deleted_at FROM chat_messages WHERE id = ?`,
+      [messageId]
+    );
+
+    if (messages.length === 0) {
+      return { success: false, error: 'Message not found' };
+    }
+
+    const message = messages[0];
+
+    // Check if already deleted
+    if (message.deleted_at) {
+      return { success: false, error: 'Message already deleted' };
+    }
+
+    // Verify ownership - user can only delete their own messages
+    if (message.account_id !== accountId) {
+      return { success: false, error: 'Unauthorized: You can only delete your own messages' };
+    }
+
+    // Soft delete: set deleted_at timestamp
+    const deletedAt = Date.now();
+    await executeQuery(
+      `UPDATE chat_messages SET deleted_at = ? WHERE id = ?`,
+      [deletedAt, messageId]
+    );
+
+    logger.info(`Message ${messageId} deleted by account ${accountId}`);
+    return { success: true };
+  } catch (error) {
+    logger.error('Error deleting chat message:', error);
+    return { success: false, error: 'Failed to delete message' };
+  }
+}
+
+/**
  * Validate message content
  */
 export function validateMessage(message: string): { valid: boolean; error?: string } {
@@ -161,3 +206,4 @@ export function validateMessage(message: string): { valid: boolean; error?: stri
 
   return { valid: true };
 }
+

@@ -65,6 +65,50 @@ router.get('/online-count', asyncHandler(async (req, res) => {
 }));
 
 // =====================================================
+// DELETE /api/chat/messages/:messageId - Delete a message
+// =====================================================
+
+router.delete('/messages/:messageId', asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const user = (req as any).user;
+
+  if (!user) {
+    res.status(401).json({
+      success: false,
+      error: 'Unauthorized',
+    });
+    return;
+  }
+
+  const messageIdNum = parseInt(messageId);
+  if (isNaN(messageIdNum)) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid message ID',
+    });
+    return;
+  }
+
+  const { deleteMessage } = await import('../services/chat-service.js');
+  const result = await deleteMessage(messageIdNum, user.accountId || user.id);
+
+  if (!result.success) {
+    res.status(result.error?.includes('Unauthorized') ? 403 : 404).json({
+      success: false,
+      error: result.error,
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    messageId: messageIdNum,
+  });
+
+  logger.debug(`Message ${messageId} deleted by ${user.username}`);
+}));
+
+// =====================================================
 // GET /api/channels - Get available channels
 // =====================================================
 

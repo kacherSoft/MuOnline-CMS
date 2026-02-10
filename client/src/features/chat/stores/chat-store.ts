@@ -56,6 +56,13 @@ export const useChatStore = create<ChatStore>()(
           return { messages: [...newMessages, ...state.messages] };
         }),
 
+      deleteMessage: (messageId: string) =>
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m.id === messageId ? { ...m, deletedAt: Date.now() } : m
+          ),
+        })),
+
       setOnlineUsers: (users: OnlineUser[]) =>
         set({ onlineUsers: users }),
 

@@ -35,16 +35,16 @@ const userMessageCounts = new Map<number, { count: number; resetTime: number }>(
 function checkMessageRateLimit(accountId: number): boolean {
   const now = Date.now();
   const entry = userMessageCounts.get(accountId);
-  
+
   if (!entry || now > entry.resetTime) {
     userMessageCounts.set(accountId, { count: 1, resetTime: now + MESSAGE_RATE_WINDOW });
     return true;
   }
-  
+
   if (entry.count >= MESSAGE_RATE_LIMIT) {
     return false;
   }
-  
+
   entry.count++;
   return true;
 }
@@ -167,7 +167,7 @@ export function registerChatHandlers(io: ChatSocketServer, socket: Socket) {
         messageType: 'text',
       });
 
-      io.to(channel).emit('chat:message', savedMessage);
+      socket.broadcast.to(channel).emit('chat:message', savedMessage);
 
       if (typeof callback === 'function') callback({ success: true, message: savedMessage });
 
@@ -237,12 +237,16 @@ export function registerChatHandlers(io: ChatSocketServer, socket: Socket) {
         if (typeof callback === 'function') callback({ success: false, error: 'Invalid channel' });
         return;
       }
+
+      const alreadyInChannel = socket.rooms.has(channel);
       socket.join(channel);
 
-      socket.to(channel).emit('chat:user-joined', {
-        characterName: user.username,
-        channel,
-      });
+      if (!alreadyInChannel) {
+        socket.to(channel).emit('chat:user-joined', {
+          characterName: user.username,
+          channel,
+        });
+      }
 
       if (typeof callback === 'function') callback({ success: true });
 
@@ -277,6 +281,40 @@ export function registerChatHandlers(io: ChatSocketServer, socket: Socket) {
     } catch (error) {
       logger.error('Error handling chat:leave:', error);
       if (typeof callback === 'function') callback({ success: false, error: 'Failed to leave channel' });
+    }
+  });
+
+  // =====================================================
+  // CHAT:DELETE - Delete a message
+  // =====================================================
+
+  socket.on('chat:delete', async (data, callback) => {
+    try {
+      const { messageId } = data;
+
+      if (typeof messageId !== 'number') {
+        if (typeof callback === 'function') callback({ success: false, error: 'Invalid message ID' });
+        return;
+      }
+
+      const { deleteMessage } = await import('../services/chat-service.js');
+      const result = await deleteMessage(messageId, user.accountId);
+
+      if (!result.success) {
+        if (typeof callback === 'function') callback({ success: false, error: result.error });
+        return;
+      }
+
+      // Broadcast deletion to all users in all channels
+      // Since we don't track which channel the message was in, broadcast to all
+      io.emit('chat:message-deleted', { messageId, channel: 'global' });
+
+      if (typeof callback === 'function') callback({ success: true });
+
+      logger.debug(`Message ${messageId} deleted by ${user.username} via socket`);
+    } catch (error) {
+      logger.error('Error handling chat:delete:', error);
+      if (typeof callback === 'function') callback({ success: false, error: 'Failed to delete message' });
     }
   });
 

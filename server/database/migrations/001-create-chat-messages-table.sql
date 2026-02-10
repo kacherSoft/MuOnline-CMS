@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   message_type ENUM('text', 'image', 'system') DEFAULT 'text',
   channel VARCHAR(50) DEFAULT 'global',
   created_at BIGINT NOT NULL,
+  deleted_at BIGINT DEFAULT NULL,
   INDEX idx_created_at (created_at),
   INDEX idx_channel (channel),
-  INDEX idx_account_id (account_id)
+  INDEX idx_account_id (account_id),
+  INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
