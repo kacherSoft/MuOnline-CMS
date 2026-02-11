@@ -58,7 +58,7 @@ export const executeQuery = async <T = any>(
 ): Promise<T[]> => {
   const currentPool = getConnectionPool();
   try {
-    const [rows] = await currentPool.execute(query, params);
+    const [rows] = await currentPool.query(query, params);
     return rows as T[];
   } catch (error) {
     console.error('❌ Database query error:', error);
@@ -87,7 +87,7 @@ export const executeInsert = async (
 ): Promise<number> => {
   const currentPool = getConnectionPool();
   try {
-    const [result] = await currentPool.execute(query, params);
+    const [result] = await currentPool.query(query, params);
     return (result as any).insertId;
   } catch (error) {
     console.error('❌ Database insert error:', error);
