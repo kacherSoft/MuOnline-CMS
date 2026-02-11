@@ -5,76 +5,83 @@
 
 import { executeQuery } from '../lib/mysql-connection-pool.js';
 import { getCachedData, setCachedData, CacheKeys } from '../lib/ranking-cache.js';
-import type { IndividualRankingEntry, RankingQueryParams } from '../types/ranking-types.js';
+import type { IndividualRankingEntry, RankingQueryParams, RankingResult } from '../types/ranking-types.js';
 import { CharacterClassNames } from '../types/ranking-types.js';
-import { INDIVIDUAL_RANKING_QUERY } from '../lib/ranking-queries.js';
+import { INDIVIDUAL_RANKING_QUERY, INDIVIDUAL_COUNT_QUERY } from '../lib/ranking-queries.js';
 import { logger } from '../utils/winston-logger.js';
 
 /**
- * Get individual rankings
- * Returns top characters sorted by Resets DESC, Level DESC
+ * Get individual rankings with fixed sorting (reset DESC, level DESC)
+ * Returns rankings with total count for pagination
  */
 export const getIndividualRankings = async (
   params: RankingQueryParams = {}
-): Promise<IndividualRankingEntry[]> => {
+): Promise<RankingResult<IndividualRankingEntry>> => {
   const limit = params.limit || 100;
   const offset = params.offset || 0;
 
-  // Check cache first
+  // Check cache first (simplified cache key without sort variations)
   const cacheKey = CacheKeys.individual(limit);
   const cached = await getCachedData<IndividualRankingEntry[]>(cacheKey);
   if (cached) {
     logger.debug('Individual rankings cache hit');
-    return cached.slice(offset, offset + limit);
+    return {
+      rankings: cached.slice(offset, offset + limit),
+      total: cached.length,
+    };
   }
 
   logger.debug('Individual rankings cache miss, querying database');
 
   try {
-    // Query from database
+    // Query from database with fixed sorting
     const results = await executeQuery<{
-      Name: string;
-      Class: number;
-      cLevel: number;
-      Resets: number;
-      Strength: number;
-      Dexterity: number;
-      Vitality: number;
-      Energy: number;
+      name: string;
+      race: number;
+      level: number;
+      reset: number;
+      strength: number;
+      agility: number;
+      vitality: number;
+      energy: number;
     }>(INDIVIDUAL_RANKING_QUERY, [limit * 2]); // Fetch extra for offset
 
     // Map to ranking entries
     const rankings: IndividualRankingEntry[] = results
       .map((row, index) => ({
         rank: index + 1,
-        name: row.Name,
-        class: row.Class,
-        className: CharacterClassNames[row.Class] || 'Unknown',
-        level: row.cLevel,
-        resets: row.Resets,
-        strength: row.Strength,
-        dexterity: row.Dexterity,
-        vitality: row.Vitality,
-        energy: row.Energy,
+        name: row.name,
+        class: row.race,
+        className: CharacterClassNames[row.race] || 'Unknown',
+        level: row.level,
+        resets: row.reset,
+        strength: row.strength,
+        dexterity: row.agility,
+        vitality: row.vitality,
+        energy: row.energy,
       }))
       .slice(offset, offset + limit);
 
     // Cache the results
     await setCachedData(cacheKey, results.map((row, index) => ({
       rank: index + 1,
-      name: row.Name,
-      class: row.Class,
-      className: CharacterClassNames[row.Class] || 'Unknown',
-      level: row.cLevel,
-      resets: row.Resets,
-      strength: row.Strength,
-      dexterity: row.Dexterity,
-      vitality: row.Vitality,
-      energy: row.Energy,
+      name: row.name,
+      class: row.race,
+      className: CharacterClassNames[row.race] || 'Unknown',
+      level: row.level,
+      resets: row.reset,
+      strength: row.strength,
+      dexterity: row.agility,
+      vitality: row.vitality,
+      energy: row.energy,
     })));
 
-    logger.info(`Retrieved ${rankings.length} individual rankings`);
-    return rankings;
+    // Get total count
+    const countResult = await executeQuery<{ total: number }>(INDIVIDUAL_COUNT_QUERY);
+    const total = countResult[0]?.total || 0;
+
+    logger.info(`Retrieved ${rankings.length} individual rankings (total: ${total})`);
+    return { rankings, total };
   } catch (error) {
     logger.error('Error fetching individual rankings:', error);
     throw new Error('Failed to fetch individual rankings');
@@ -88,29 +95,29 @@ export const getIndividualRankings = async (
 export const refreshIndividualRankings = async (): Promise<void> => {
   try {
     const cacheKey = CacheKeys.individual(100);
-    
+
     const results = await executeQuery<{
-      Name: string;
-      Class: number;
-      cLevel: number;
-      Resets: number;
-      Strength: number;
-      Dexterity: number;
-      Vitality: number;
-      Energy: number;
+      name: string;
+      race: number;
+      level: number;
+      reset: number;
+      strength: number;
+      agility: number;
+      vitality: number;
+      energy: number;
     }>(INDIVIDUAL_RANKING_QUERY, [100]);
 
     const rankings: IndividualRankingEntry[] = results.map((row, index) => ({
       rank: index + 1,
-      name: row.Name,
-      class: row.Class,
-      className: CharacterClassNames[row.Class] || 'Unknown',
-      level: row.cLevel,
-      resets: row.Resets,
-      strength: row.Strength,
-      dexterity: row.Dexterity,
-      vitality: row.Vitality,
-      energy: row.Energy,
+      name: row.name,
+      class: row.race,
+      className: CharacterClassNames[row.race] || 'Unknown',
+      level: row.level,
+      resets: row.reset,
+      strength: row.strength,
+      dexterity: row.agility,
+      vitality: row.vitality,
+      energy: row.energy,
     }));
 
     await setCachedData(cacheKey, rankings);

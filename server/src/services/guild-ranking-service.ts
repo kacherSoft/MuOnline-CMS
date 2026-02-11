@@ -1,21 +1,21 @@
 /**
  * Guild Ranking Service
- * Handles guild rankings (Score, Level, Member Count)
+ * Handles guild rankings (Score, Member Count)
  */
 
 import { executeQuery } from '../lib/mysql-connection-pool.js';
 import { getCachedData, setCachedData, CacheKeys } from '../lib/ranking-cache.js';
-import type { GuildRankingEntry, RankingQueryParams } from '../types/ranking-types.js';
-import { GUILD_RANKING_QUERY } from '../lib/ranking-queries.js';
+import type { GuildRankingEntry, RankingQueryParams, RankingResult } from '../types/ranking-types.js';
+import { GUILD_RANKING_QUERY, GUILD_COUNT_QUERY } from '../lib/ranking-queries.js';
 import { logger } from '../utils/winston-logger.js';
 
 /**
- * Get guild rankings
- * Returns top guilds sorted by Score DESC, Level DESC
+ * Get guild rankings with total count
+ * Returns top guilds sorted by score DESC
  */
 export const getGuildRankings = async (
   params: RankingQueryParams = {}
-): Promise<GuildRankingEntry[]> => {
+): Promise<RankingResult<GuildRankingEntry>> => {
   const limit = params.limit || 100;
   const offset = params.offset || 0;
 
@@ -24,7 +24,10 @@ export const getGuildRankings = async (
   const cached = await getCachedData<GuildRankingEntry[]>(cacheKey);
   if (cached) {
     logger.debug('Guild rankings cache hit');
-    return cached.slice(offset, offset + limit);
+    return {
+      rankings: cached.slice(offset, offset + limit),
+      total: cached.length,
+    };
   }
 
   logger.debug('Guild rankings cache miss, querying database');
@@ -32,37 +35,40 @@ export const getGuildRankings = async (
   try {
     // Query from database
     const results = await executeQuery<{
-      G_Name: string;
-      G_Master: string;
-      G_Score: number;
-      G_Level: number;
-      MemberCount: number;
+      guild_name: string;
+      master_name: string | null;
+      score: number;
+      member_count: number;
     }>(GUILD_RANKING_QUERY, [limit * 2]); // Fetch extra for offset
 
     // Map to ranking entries
     const rankings: GuildRankingEntry[] = results
       .map((row, index) => ({
         rank: index + 1,
-        name: row.G_Name,
-        master: row.G_Master,
-        score: row.G_Score,
-        level: row.G_Level,
-        memberCount: row.MemberCount,
+        name: row.guild_name,
+        master: row.master_name || 'Unknown',
+        score: row.score,
+        level: 0,
+        memberCount: row.member_count,
       }))
       .slice(offset, offset + limit);
 
     // Cache the results
     await setCachedData(cacheKey, results.map((row, index) => ({
       rank: index + 1,
-      name: row.G_Name,
-      master: row.G_Master,
-      score: row.G_Score,
-      level: row.G_Level,
-      memberCount: row.MemberCount,
+      name: row.guild_name,
+      master: row.master_name || 'Unknown',
+      score: row.score,
+      level: 0,
+      memberCount: row.member_count,
     })));
 
-    logger.info(`Retrieved ${rankings.length} guild rankings`);
-    return rankings;
+    // Get total count
+    const countResult = await executeQuery<{ total: number }>(GUILD_COUNT_QUERY);
+    const total = countResult[0]?.total || 0;
+
+    logger.info(`Retrieved ${rankings.length} guild rankings (total: ${total})`);
+    return { rankings, total };
   } catch (error) {
     logger.error('Error fetching guild rankings:', error);
     throw new Error('Failed to fetch guild rankings');
@@ -78,20 +84,19 @@ export const refreshGuildRankings = async (): Promise<void> => {
     const cacheKey = CacheKeys.guild(100);
     
     const results = await executeQuery<{
-      G_Name: string;
-      G_Master: string;
-      G_Score: number;
-      G_Level: number;
-      MemberCount: number;
+      guild_name: string;
+      master_name: string | null;
+      score: number;
+      member_count: number;
     }>(GUILD_RANKING_QUERY, [100]);
 
     const rankings: GuildRankingEntry[] = results.map((row, index) => ({
       rank: index + 1,
-      name: row.G_Name,
-      master: row.G_Master,
-      score: row.G_Score,
-      level: row.G_Level,
-      memberCount: row.MemberCount,
+      name: row.guild_name,
+      master: row.master_name || 'Unknown',
+      score: row.score,
+      level: 0,
+      memberCount: row.member_count,
     }));
 
     await setCachedData(cacheKey, rankings);

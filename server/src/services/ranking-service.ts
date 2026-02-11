@@ -6,15 +6,15 @@
 import { getIndividualRankings, refreshIndividualRankings } from './individual-ranking-service.js';
 import { getGuildRankings, refreshGuildRankings } from './guild-ranking-service.js';
 import { getPvPRankings, refreshPvPRankings } from './pvp-ranking-service.js';
-import type { IndividualRankingEntry, GuildRankingEntry, PvPRankingEntry, RankingQueryParams } from '../types/ranking-types.js';
+import type { IndividualRankingEntry, GuildRankingEntry, PvPRankingEntry, RankingQueryParams, RankingResult } from '../types/ranking-types.js';
 import { logger } from '../utils/winston-logger.js';
 
 /**
- * Get individual rankings
+ * Get individual rankings with total count
  */
 export const getIndividual = async (
   params?: RankingQueryParams
-): Promise<IndividualRankingEntry[]> => {
+): Promise<RankingResult<IndividualRankingEntry>> => {
   try {
     return await getIndividualRankings(params);
   } catch (error) {
@@ -24,11 +24,11 @@ export const getIndividual = async (
 };
 
 /**
- * Get guild rankings
+ * Get guild rankings with total count
  */
 export const getGuild = async (
   params?: RankingQueryParams
-): Promise<GuildRankingEntry[]> => {
+): Promise<RankingResult<GuildRankingEntry>> => {
   try {
     return await getGuildRankings(params);
   } catch (error) {
@@ -38,11 +38,11 @@ export const getGuild = async (
 };
 
 /**
- * Get PvP rankings
+ * Get PvP rankings with total count
  */
 export const getPvP = async (
   params?: RankingQueryParams
-): Promise<PvPRankingEntry[]> => {
+): Promise<RankingResult<PvPRankingEntry>> => {
   try {
     return await getPvPRankings(params);
   } catch (error) {

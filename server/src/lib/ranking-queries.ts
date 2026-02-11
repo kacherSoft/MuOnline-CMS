@@ -1,80 +1,67 @@
 /**
  * Ranking SQL Queries
  * Predefined queries for ranking data with proper indexing
+ * Schema: MuEmu Season 19.2 MySQL
  */
 
 /**
  * Individual ranking query (Level + Resets)
- * Sorts by Resets DESC, then Level DESC
+ * Sorts by reset DESC, then level DESC
  */
 export const INDIVIDUAL_RANKING_QUERY = `
   SELECT
-    Name,
-    Class,
-    cLevel,
-    Resets,
-    Strength,
-    Dexterity,
-    Vitality,
-    Energy
-  FROM Character
-  WHERE Name IS NOT NULL
-    AND Name != ''
-  ORDER BY Resets DESC, cLevel DESC
+    name,
+    race,
+    level,
+    \`reset\`,
+    strength,
+    agility,
+    vitality,
+    energy
+  FROM character_info
+  WHERE name IS NOT NULL
+    AND name != ''
+  ORDER BY \`reset\` DESC, level DESC
   LIMIT ?
 `;
 
 /**
  * Guild ranking query
+ * Joins guild_members to find guild master (id=128)
  * Calculates member count via subquery
- * Sorts by G_Score DESC, then G_Level DESC
+ * Sorts by score DESC
  */
 export const GUILD_RANKING_QUERY = `
   SELECT
-    G_Name,
-    G_Master,
-    G_Score,
-    G_Level,
-    (SELECT COUNT(*) FROM GuildMember WHERE G_Name = g.G_Name) as MemberCount
-  FROM Guild g
-  WHERE G_Name IS NOT NULL
-    AND G_Name != ''
-  ORDER BY G_Score DESC, G_Level DESC
+    gl.name AS guild_name,
+    ci.name AS master_name,
+    gl.score,
+    (SELECT COUNT(*) FROM guild_members WHERE guild_id = gl.guid) AS member_count
+  FROM guild_list gl
+  LEFT JOIN guild_members gm ON gm.guild_id = gl.guid AND gm.id = 128
+  LEFT JOIN character_info ci ON ci.guid = gm.char_id
+  WHERE gl.name IS NOT NULL
+    AND gl.name != ''
+  ORDER BY gl.score DESC
   LIMIT ?
 `;
 
 /**
- * PvP ranking query (from ExtShipData or custom table)
- * Calculates win rate
+ * PvP ranking query (no PvP tables exist in this schema)
+ * Returns empty result set
  */
 export const PVP_RANKING_QUERY = `
-  SELECT
-    CharName,
-    Wins,
-    Losses,
-    (Wins * 100.0 / NULLIF(Wins + Losses, 0)) as WinRate
-  FROM PvPStats
-  WHERE CharName IS NOT NULL
-    AND CharName != ''
-  ORDER BY Wins DESC, WinRate DESC
-  LIMIT ?
+  SELECT '' AS char_name, 0 AS kills, 0 AS deaths, 0 AS win_rate
+  FROM DUAL WHERE 1=0
 `;
 
 /**
- * Alternative PvP ranking query using ExtShipData
- * Fallback if custom PvPStats table doesn't exist
+ * Alternative PvP ranking query
+ * Returns empty result set
  */
 export const PVP_RANKING_QUERY_ALT = `
-  SELECT
-    AccountID as CharName,
-    Wins,
-    Losses,
-    (Wins * 100.0 / NULLIF(Wins + Losses, 0)) as WinRate
-  FROM ExtShipData
-  WHERE AccountID IS NOT NULL
-    AND AccountID != ''
-  ORDER BY Wins DESC, WinRate DESC
-  LIMIT ?
+  SELECT '' AS char_name, 0 AS kills, 0 AS deaths, 0 AS win_rate
+  FROM DUAL WHERE 1=0
 `;
 
 /**
@@ -82,9 +69,9 @@ export const PVP_RANKING_QUERY_ALT = `
  */
 export const INDIVIDUAL_COUNT_QUERY = `
   SELECT COUNT(*) as total
-  FROM Character
-  WHERE Name IS NOT NULL
-    AND Name != ''
+  FROM character_info
+  WHERE name IS NOT NULL
+    AND name != ''
 `;
 
 /**
@@ -92,19 +79,16 @@ export const INDIVIDUAL_COUNT_QUERY = `
  */
 export const GUILD_COUNT_QUERY = `
   SELECT COUNT(*) as total
-  FROM Guild
-  WHERE G_Name IS NOT NULL
-    AND G_Name != ''
+  FROM guild_list
+  WHERE name IS NOT NULL
+    AND name != ''
 `;
 
 /**
  * Get total count for PvP rankings
  */
 export const PVP_COUNT_QUERY = `
-  SELECT COUNT(*) as total
-  FROM PvPStats
-  WHERE CharName IS NOT NULL
-    AND CharName != ''
+  SELECT 0 as total
 `;
 
 export default {

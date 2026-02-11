@@ -41,9 +41,6 @@ export function useRankings(
   const {
     page = 1,
     limit = 20,
-    search = '',
-    sortBy = 'rank',
-    sortOrder = 'asc',
   } = query;
 
   const fetchRankings = useCallback(async () => {
@@ -54,13 +51,7 @@ export function useRankings(
       const params = new URLSearchParams({
         page: String(page),
         limit: String(limit),
-        sortBy,
-        sortOrder,
       });
-
-      if (search) {
-        params.append('search', search);
-      }
 
       const response = await apiClient.get<RankingResponse<
         IndividualRanking | GuildRanking | PvPRanking
@@ -78,7 +69,7 @@ export function useRankings(
     } finally {
       setLoading(false);
     }
-  }, [type, page, limit, search, sortBy, sortOrder]);
+  }, [type, page, limit]);
 
   useEffect(() => {
     fetchRankings();

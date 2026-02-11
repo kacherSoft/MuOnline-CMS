@@ -27,6 +27,15 @@ export enum CharacterClass {
   RAGE_FIGHTER = 96,
   FURY_WARRIOR = 97,
   FIST_MASTER = 98,
+  GROW_LANCER = 112,
+  MIRAGE_LANCER = 113,
+  SHINING_LANCER = 114,
+  RUNE_WIZARD = 160,
+  RUNE_SPELL_MASTER = 161,
+  GRAND_RUNE_MASTER = 162,
+  SLAYER = 176,
+  ROYAL_SLAYER = 177,
+  MASTER_SLAYER = 178,
 }
 
 /**
@@ -53,6 +62,15 @@ export const CharacterClassNames: Record<number, string> = {
   [CharacterClass.RAGE_FIGHTER]: 'Rage Fighter',
   [CharacterClass.FURY_WARRIOR]: 'Fury Warrior',
   [CharacterClass.FIST_MASTER]: 'Fist Master',
+  [CharacterClass.GROW_LANCER]: 'Grow Lancer',
+  [CharacterClass.MIRAGE_LANCER]: 'Mirage Lancer',
+  [CharacterClass.SHINING_LANCER]: 'Shining Lancer',
+  [CharacterClass.RUNE_WIZARD]: 'Rune Wizard',
+  [CharacterClass.RUNE_SPELL_MASTER]: 'Rune Spell Master',
+  [CharacterClass.GRAND_RUNE_MASTER]: 'Grand Rune Master',
+  [CharacterClass.SLAYER]: 'Slayer',
+  [CharacterClass.ROYAL_SLAYER]: 'Royal Slayer',
+  [CharacterClass.MASTER_SLAYER]: 'Master Slayer',
 };
 
 /**
@@ -100,6 +118,14 @@ export interface PvPRankingEntry {
 export interface RankingQueryParams {
   limit?: number;
   offset?: number;
+}
+
+/**
+ * Ranking result with total count
+ */
+export interface RankingResult<T> {
+  rankings: T[];
+  total: number;
 }
 
 /**

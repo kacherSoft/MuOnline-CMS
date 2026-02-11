@@ -24,12 +24,10 @@ export const RankingsPage = React.forwardRef<HTMLDivElement, RankingsPageProps>(
     const [activeTab, setActiveTab] = React.useState<RankingType>('individual');
     const [page, setPage] = React.useState(1);
     const [search, setSearch] = React.useState('');
-    const [sortBy, setSortBy] = React.useState('rank');
-    const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
 
     const query = React.useMemo(
-      () => ({ page, limit: 20, search, sortBy, sortOrder }),
-      [page, search, sortBy, sortOrder]
+      () => ({ page, limit: 20, search }),
+      [page, search]
     );
 
     const individualRankings = useIndividualRankings(query);
@@ -59,17 +57,6 @@ export const RankingsPage = React.forwardRef<HTMLDivElement, RankingsPageProps>(
       setActiveTab(tab);
       setPage(1);
       setSearch('');
-      setSortBy('rank');
-      setSortOrder('asc');
-    };
-
-    const handleSort = (column: string) => {
-      if (sortBy === column) {
-        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-      } else {
-        setSortBy(column);
-        setSortOrder('asc');
-      }
     };
 
     const handlePageChange = (newPage: number) => {
@@ -121,9 +108,6 @@ export const RankingsPage = React.forwardRef<HTMLDivElement, RankingsPageProps>(
             type={activeTab}
             data={currentRankings.data}
             loading={currentRankings.loading}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
           />
 
           {currentRankings.pagination && currentRankings.pagination.totalPages > 1 && (
